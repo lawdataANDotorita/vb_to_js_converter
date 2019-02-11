@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>didn't have my zen moment yet</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <meta charset="utf-8"/>
+		<style>
+			html,body{
+				width:100%;
+				height:100%;
+			}
+			body{
+				display:flex;
+				flex-direction:column;
+				align-items:flex-start;
+				margin:0;
+				padding:0;
+				position:absolute;
+			}
+			#inputWrapper{
+				display:flex;
+				justify-content:space-around;
+				margin:10px auto;
+				flex-grow:1;
+				width:100%;
+				
+			}
+			#eFrom,#eTo{
+				width:48%;
+			}
+		</style>
+	</head>
+    <body>
+	<h1 id="hdr">changing array elements syntax from vb to js convention</h1>
+	<section id="inputWrapper">
+		<textarea id="eFrom"></textarea>
+		<textarea id="eTo"></textarea>
+	</section>
+	<input id="btn" type="button" value="translate" onclick="onTranslate()"/>
+	<script>
+		/* from round brackets to square brackets and back (just kidding with the last part, it just sounded good) */
+		function onTranslate1(){
+			const arNames = ["rows","cells","tbodies","Vat_Taarih","Vat_Mas","Matbea_Taarih","Matbea_Taarih_Org","Shaar_Libor","Shaar_Matah","Madad_value","arrayRibitTaarih","arrayRibit","arrayMadad_Matah"];
+			const sTxtOrg=document.querySelector("#eFrom").value;
+			let sTxtToChng=document.querySelector("#eFrom").value;
+			arNames.forEach((itm)=>{
+				const re = new RegExp(itm+"\s*([(]).*?([)])","ig");
+				let mt=null;
+				while (mt=re.exec(sTxtOrg)){
+					const sOld=mt[0];
+					const sNew=sOld.replace("(","[").replace(")","]");
+					console.log(mt);
+					sTxtToChng=sTxtToChng.replace(sOld,sNew);
+				}
+			});
+			document.querySelector("#eTo").value=sTxtToChng;
+		}
+		/* this is a special ad hok translate. i don't need we'll need it again. just pay heed to the function attached to the onclick event hander in the #btn element*/
+		function onTranslate2(){
+			const re = new RegExp("myRecordset[.]fields[.]Item[(][\"]([^\"]+)[\"][)][.]Value","ig");
+			const sTxtOrg=document.querySelector("#eFrom").value;
+			let sTxtToChng=document.querySelector("#eFrom").value,mt=null;
+			while (mt=re.exec(sTxtOrg)){
+				const sFrom=mt[0];
+				const sTo="oRecordsManager.getCurrent()."+mt[1];
+				sTxtToChng=sTxtToChng.replace(sFrom,sTo);
+//				console.log (sFrom+" *** "+sTo);
+			}
+			document.querySelector("#eTo").value=sTxtToChng;
+		}
+		function onTranslate3(){
+			const re = new RegExp("([\r\n]+[ \t]*[a-z0-9_]+)(\s*[;])","ig");
+			let sTxtToChng=document.querySelector("#eFrom").value;
+			sTxtToChng=sTxtToChng.replace(re,"$1()$2");
+			document.querySelector("#eTo").value=sTxtToChng;
+		}
+	</script>
+	</body>
+</html>

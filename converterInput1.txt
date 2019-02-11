@@ -1,0 +1,129 @@
+<script language="vbscript">
+function chkBNI()
+ 
+	strBNI=BNI_str2006
+	if cdbl(DateBY.value)<=2006 and  DateBM.value<=7 then strBNI=BNI_str2004
+	if cdbl(DateBY.value)<=2002 and  DateBM.value<=6 then strBNI=BNI_str2002
+	 
+	BNI.outerHTML=strBNI 
+	
+	call DoCombo()
+		
+end function
+</script>
+<script type="text/vbscript">
+
+function goHome(a,b,c)
+
+socalled=234
+
+end function
+function DoCombo
+
+    dim Data_Use
+    dim myAnswer
+    dim k
+    
+    dim cmb1
+    dim cmb2
+    dim CountArray
+
+	Data_Use="01/" & DateBM.value & "/" & DateBY.value
+	
+	myAnswer=ReceiveLastVat(Data_Use)
+	
+    CountArray=Split(myAnswer,";")
+      
+	if isarray(CountArray) = true  then 
+
+		cmb1=CountArray(0)
+		cmb2=CountArray(1)
+	
+		Do while BNI.length > 0
+		   for k=BNI.length-1 to 0 step -1    
+			     BNI.remove(k)
+		   next
+		Loop
+
+		For k =1 to 3
+		     Set objOpt = document.CreateElement("OPTION")
+		     if k = 1 then 
+				objOpt.Value = 0				
+				objOpt.Text = "0%"
+			 elseif k = 2 then 
+				objOpt.Value = cmb1				
+				objOpt.Text = cmb1 & "% " & "מלכ''ר"
+			 elseif k = 3 then	
+				objOpt.Value = cmb2				
+				objOpt.Text = cmb2  &"% " & "מוסד כספי"
+		     end if
+		     BNI.add objOpt
+		     Set objOpt = Nothing'
+		 next
+  
+	 end if
+
+
+
+end function
+</script>
+
+<script for="PKA" LANGUAGE="vbscript" event="onchange()">
+	if not isnumeric(trim(PKA.value)) then PKA.value=Year(Date())
+</script>
+<script for="PKC" LANGUAGE="vbscript" event="onchange()">
+	call CheckDate(PKC)
+	if not isdate(PKC.value) then	PKC.value=""
+	if (not vbDateMass_NotShaar(PKC.value)) then
+		call window.setTimeout("Calc.Fcs(PKC)",1) 	
+	else
+		PKE.innerText="" 
+		document.all.FrMdd.src="Az_GetMddNew.asp?D="+cstr(PKC.value)
+	
+	end if	 
+</script>
+<script for="butDownT" event="onclick()">
+	Calc.onDownFile_T();
+</script>
+<script for="butDownF" event="onclick()">
+
+	Calc.onDownFile_F();
+</script>
+<script for="Pirut" event="onclick()">
+	if (TblN.style.display=="") TblN.style.display="none";
+	else TblN.style.display="";   
+</script>
+<script for="AddMtba" LANGUAGE="vbscript" event="onclick">
+	' this is run env functionality of add coin
+	dim i
+	dim dgHeight
+	if InStr (navigator.userAgent,"MSIE 7")>1 then 
+		str=window.showModalDialog("AzNHool_AddMtba.asp?Date="+cstr(Date()),"","dialogHeight: 140px; dialogWidth: 240px;center: Yes; help: No; resizable: No; status: No; ")
+	else
+		str=window.showModalDialog("AzNHool_AddMtba.asp?Date="+cstr(Date()),"","dialogHeight: 140px; dialogWidth: 240px;center: Yes; help: No; resizable: No; status: No; ")
+	end if
+	
+Calc.Fcs(null)
+	if (str<>undefined) then
+		arT=Split(str,"<>")
+		if wrkNmAr<>"" then wrkNmAr=wrkNmAr+"<>"
+		if wrkShaarAr<>"" then wrkShaarAr=wrkShaarAr+"<>"
+		wrkNmAr=arT(0)
+		wrkShaarAr=arT(1)
+		
+		strSel=mtba_nos.innerHTML
+		'strSel=replace(strSel,"Err","")
+		strSel=strSel+"BBegoption value=""**"+cstr(wrkShaarAr)+""" EEnd"+cstr(wrkNmAr)+"BBeg/optionEEnd"
+
+		mtba_nos.innerHTML=strSel
+
+		call setSelMtba()
+	end if	
+</script>
+
+<html>
+<head>
+</head>
+<body>
+</body>
+</html>

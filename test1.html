@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+	<title>test1</title>
+	<meta charset="windows-1255"/>
+</head>
+<body onload="onLoad()">
+<script>
+	function onLoad(){
+		var sLog="log_vb_to_js_"+(new Date()).getTime();
+		var sLogPath="c:\\"+sLog+".txt";
+		alert (sLogPath);
+		var fso = new ActiveXObject("Scripting.FileSystemObject");
+		var oFl = fso.OpenTextFile(sLogPath,8,true);
+		oFl.WriteLine("the name of the file is: " + "lalala");
+		oFl.WriteLine("bla1");
+		oFl.WriteLine("bla2");
+		oFl.WriteLine("");
+		oFl.WriteLine("bla3");
+		oFl.WriteLine("\r\n\r\n\r\n\r\n");
+		oFl.WriteLine("bla4");
+		oFl.Close();
+	}
+</script>
+</body>
+</html>

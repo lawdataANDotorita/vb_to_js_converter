@@ -1,0 +1,246 @@
+<!doctype html>
+<html>
+<head>
+	<title>converter</title>
+	<meta charset="windows-1255"/>
+	<script src="jquery-1.10.2.min.js"></script>
+	<style>
+		*{
+			margin:0;
+			box-sizing:border-box;
+		}
+		body{
+			position:absolute;
+			width:100%;
+			height:100%;
+			margin:0;
+			padding:0;
+		}
+		#eVbInput,#eJsInput{
+			width:48%;
+			height:78%;
+			margin:0.5%;
+			border:1px solid purple;
+		}
+		#bConvert{
+			margin:0.5%;	
+		}
+		#eHdr{
+			text-align:center;
+			height:10%;
+		}
+		#eUsrController{
+			height:9%;
+		}
+	</style>
+</head>
+<body>
+	<h1 id="eHdr">vb to js converter</h1>
+	<textarea id="eVbInput"></textarea>
+	<textarea id="eJsInput"readonly="readonly"></textarea>
+	<div id="eUsrController">
+		<input type="file" id="eRules" placeholder="choose rules file" accept=".txt" onclick="clearVl()" onchange="loadRulesFile(this)"/>
+		<input id="bConvert" type="button" value="convert" onclick="convert()"/>
+	</div>
+	<script>
+		var convertManager = function(){
+			var sSrc;
+			this.convert = function(sSrc1){
+				sSrc=sSrc1;
+				var sItmOrg,sItmWD;
+				
+				// we are aiming to catch 3 vbscript types of blocks: <script for=...,<script language=...,<script type=...
+				var re=new RegExp("<script.+((for\\s*=\\s*[\"]?[^\\s]+\\s*[\"]?)|(language\\s*=\\s*[\"]?\\s*vbscript\\s*[\"]?)|(type\\s*=\\s*[\"]?\\s*text[\/\\\\]vbscript\\s*[\"]?))(.|\\r|\\n|\\t)+?<\/script>","ig");
+				var mt=sSrc.match(re);
+				var bNativeVbFuncsIdentification=true;
+				if (mt){
+					for (var jj=0;jj<mt.length;jj++){
+						var sItm=mt[jj];
+						sItmWD = sItm;
+						sItmWD=replaceArrayParenthesesWithBrackets(sItmWD);
+						sItmWD=convertAmpToPlus(sItmWD);
+						for (var ii=0;ii<oRulesManager.getRulesNum();ii++){
+							var oRule=oRulesManager.getRule(ii);
+							for (var kk=1;kk<=oRule.iIterationNum();kk++){
+								re = new RegExp(oRule.srcPattern(),"ig");
+								sItmWD=sItmWD.replace(re,oRule.targetPattern());
+							}
+						}
+						re = new RegExp("(\\w{3,})","ig");
+						var mt1 = sItmWD.match(re);
+						if (mt1 && bNativeVbFuncsIdentification){
+							try{
+								for (var kk=0;kk<mt1.length;kk++){
+										var bJS=true;
+										try{
+											eval(mt1[kk]);
+										}
+										catch(e){
+											bJS=false;
+										}
+//										if (!bJS && nativeExists(mt1[kk]))alert (mt1[kk]); //native vb functions
+								}
+							}
+							catch(err){
+								bNativeVbFuncsIdentification=false;
+							}
+						}
+						sSrc=sSrc.replace(sItm,sItmWD);
+					}
+				}
+				
+				sSrc=qualifyLocalEvntHndlrs(sSrc);
+				sSrc=convertAllDocumentAll(sSrc);
+				
+				if (!bNativeVbFuncsIdentification)alert ("try ie8 for support in native vb functions identification");
+				return sSrc;
+			}
+		}
+		var rule = function(sSrcPattern1,sTargetPattern1,iIterationNum){
+			var sSrcPattern = sSrcPattern1;
+			var sTargetPattern = sTargetPattern1;
+			var iIterationNum=iIterationNum;
+			this.srcPattern = function() {
+				return sSrcPattern;
+			}
+			this.targetPattern = function() {
+				return sTargetPattern;
+			}
+			this.iIterationNum = function() {
+				return iIterationNum;
+			}
+		}
+		var rulesManager = function(){
+			var arRules = [];
+			this.add = function(oRule){
+				arRules[arRules.length]=oRule;
+			}
+			this.getRulesNum = function(){
+				return arRules.length;
+			}
+			this.getRule = function (iIndx){
+				return arRules[iIndx];
+			}
+			this.reset = function(){
+				arRules=[];
+			}
+		}
+		
+		var oConvertManager = null,oRulesManager=null,oReader = null;
+		$(document).ready(function(){
+			oConvertManager=new convertManager();
+			oRulesManager = new rulesManager();
+		})
+		function loadRulesFile(oFile){
+			oRulesManager.reset();
+			try{
+				oReader = new FileReader();
+				oReader.onload = function (e){
+					var sTxt=oReader.result;
+					deserializeRules(sTxt);
+				}
+				oReader.readAsText(oFile.files[0]);
+			}
+			catch (err){
+				var oFs= new ActiveXObject ("Scripting.FileSystemObject");
+				var oFl = oFs.OpenTextFile(oFile.value,1,false);
+				var sTxt=oFl.ReadAll();
+				deserializeRules(sTxt);
+			}
+		}
+		function clearVl(){
+			$("#eRules").val(""); /* should do it in order to reload the same rules file over and over again.*/
+		}
+		function convert(){
+			var sSrc=$("#eVbInput").val();
+			$("#eJsInput").val(oConvertManager.convert(sSrc));
+		}
+		function deserializeRules(sTxt){
+			var re=new RegExp("[*][&][*](.|\r|\n|\t)+?[*][&][*]","ig");
+			var mt=sTxt.match(re);
+			if (mt){
+				for (var jj=0;jj<mt.length;jj++){
+					var sItm=mt[jj];
+					sItm=sItm.replace(/[*][&][*]|\n|\r|\t/ig,"");
+					var sSrcPattern=sItm.split("*^*")[0];
+					var sTrgtPattern=sItm.split("*^*")[1];
+					var iIterationNum= sItm.split("*^*").length>2 ? parseInt(sItm.split("*^*")[2],10) : 1;
+					oRulesManager.add(new rule(sSrcPattern,sTrgtPattern,iIterationNum));
+				}
+			}
+		}
+		// the local event handlers created from vb source must be put just before the closing body tag, otherwise there is a probable chance
+		// that the element referred to is yet to be created, resulting in a bug
+		function qualifyLocalEvntHndlrs(sSrc){
+			var re=new RegExp("<script.+?jsevnthndlr(.|\\r|\\n|\\t)+?<\/script>","ig");
+			var arMt=sSrc.match(re);
+			if (arMt){
+				for (var jj=0;jj<arMt.length;jj++){
+					sSrc=sSrc.replace(arMt[jj],"");
+					sSrc=sSrc.replace("</body>",String.fromCharCode(13,10)+arMt[jj]+String.fromCharCode(13,10)+"</body>");
+				}
+			}
+			return sSrc;
+		}
+		function replaceArrayParenthesesWithBrackets(sSrc){
+			/* part 1 - dealing with split and array objects*/
+			var re=new RegExp("(\\w+)\\s*=\\s*(split|array)","ig"),re1 = new RegExp("\\n+\\s*dim(.*)","ig"),re2,re3,mt,mt1,mt2,mt3;
+			while ((mt=re.exec(sSrc))){
+				re2=new RegExp(mt[1]+"\\s*[\\(]\\s*(\\w+)\\s*[\\)]","ig");
+				sSrc=sSrc.replace(re2,mt[1]+"[$1]");
+			}
+
+			/* part 2 - dealing with dim declarations of array objects */
+			// first getting all the definition lines (dim something lines)
+			while (mt1=re1.exec(sSrc)){
+				var sDimLine=mt1[1];
+				// second extracting all the array declarations in those lines
+				re3 = new RegExp("([^,]+)\\(","ig");
+				while (mt3=re3.exec(sDimLine)){
+					re2=new RegExp(mt3[1].replace(/^\s+|\s+$/ig,"")+"\\s*[\\(]\\s*(\\w+)\\s*[\\)]","ig");
+					sSrc=sSrc.replace(re2,mt3[1]+"[$1]");
+				}
+			}
+
+			return sSrc;
+		}
+		function convertAmpToPlus(sSrc){
+			var arLines=sSrc.split(String.fromCharCode(10));
+			var jj=0,kk=0,iQuotCount=0,sLine="";
+			for (jj=0;jj<arLines.length;jj++){
+				sLine=arLines[jj],iQuotCount=0;
+				for (kk=0;kk<sLine.length;kk++){
+					if (sLine[kk]=="\"")iQuotCount++;
+					if (iQuotCount % 2 ==0 && sLine[kk]=="&"){
+						sLine=sLine.replace(sLine.substr(0,kk+1),sLine.substr(0,kk)+"+");
+					}
+				}
+				sSrc=sSrc.replace(arLines[jj],sLine);
+			}
+			return sSrc;
+		}
+		function convertAllDocumentAll(sSrc){
+			var re = new RegExp ("document\\.all\\s*\\(","ig");
+			sSrc=sSrc.replace(re,"document.getElementById(");
+			re= new RegExp ("document\\.all\\.([^.\\s]+)","ig");
+			sSrc=sSrc.replace(re,"document.getElementById(\"$1\")");
+			return sSrc;
+		}
+	</script>
+	
+	<script type="text/vbscript">
+		' this function fails to work as anticipated when applied on code block found in converterInput1.txt. 
+		Function nativeExists(func_name)
+			nativeExists = False 
+
+			On Error Resume Next
+
+			ExecuteGlobal func_name
+			
+			' when the err relates to arguments in function, then we have a function on our hands
+			nativeExists = (err.number=450)
+			
+		End Function
+	</script>
+</body>
+</html>

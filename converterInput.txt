@@ -1,0 +1,50 @@
+
+function getBy()
+
+document.all("blabla").innerText="clueluess"
+
+for jj=1 to 20
+	msgbox ("123")))
+next
+
+if jj<=20 then goto mm
+
+if jj<35 then
+msgbox "444"
+elseif jj<88 then
+msgbox "55"
+else
+msgbox "66"
+end if
+
+
+do while i<30
+
+msgbox "kloolila"
+
+loop
+
+end function
+
+
+zzczxc
+zczxc
+
+zxczxc
+
+function getBy2(iload1,sload2)
+
+	select case myName
+		case "1"
+			goto mama1
+		case "2"
+			goto mama2
+		case "3"
+			goto mama3
+		case "4"
+			goto mama4
+		case else
+			goto papa
+	end select
+
+end function
